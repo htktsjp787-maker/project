@@ -96,6 +96,15 @@
         .vocab-word { font-weight: 700; color: var(--ai-accent); display: block; margin-bottom: 2px; }
 
         .summary-input { width: 100%; height: 110px; background: var(--surface-light); border: 1px solid var(--border); border-radius: 8px; color: var(--text-main); padding: 12px; box-sizing: border-box; resize: none; font-size: 0.9rem; }
+
+        /* 🕒 새로 추가된 실습 내역 아카이브 스타일 */
+        .archive-zone { margin-top: 40px; padding-top: 30px; border-top: 2px dashed var(--border); }
+        .archive-list { display: flex; flex-direction: column; gap: 15px; margin-top: 20px; }
+        .archive-item { background: var(--surface-light); border: 1px solid var(--border); border-radius: 12px; padding: 20px; position: relative; }
+        .archive-meta { display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--text-sub); border-bottom: 1px solid var(--border); padding-bottom: 8px; margin-bottom: 12px; }
+        .archive-tag { font-weight: 700; color: var(--brand); }
+        .archive-text { font-size: 0.95rem; color: var(--text-main); line-height: 1.7; white-space: pre-wrap; }
+        .btn-delete-log { position: absolute; right: 20px; bottom: 15px; background: none; border: none; color: #ef4444; font-size: 0.85rem; cursor: pointer; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -192,8 +201,8 @@
         </div>
 
         <div class="tabs">
-            <button class="tab-trigger active" onclick="loadArticle('economy')">📈 경제 전문: 유동성의 역설</button>
-            <button class="tab-trigger" onclick="loadArticle('humanity')">✍️ 인문학 칼럼: 생각의 아웃소싱</button>
+            <button class="tab-trigger active" id="tab-economy" onclick="loadArticle('economy')">📈 경제 전문: 유동성의 역설</button>
+            <button class="tab-trigger" id="tab-humanity" onclick="loadArticle('humanity')">✍️ 인문학 칼럼: 생각의 아웃소싱</button>
         </div>
 
         <div class="reading-layout">
@@ -213,9 +222,20 @@
                 <div class="vocab-box" style="border-color: rgba(22, 163, 74, 0.3);">
                     <h4 style="margin:0 0 10px 0; color:var(--success); font-size:1rem;">✏️ 문해력 자기주도 요약 실습</h4>
                     <p style="font-size:0.8rem; color:var(--text-sub); margin-top:0; line-height:1.5;">AI에게 맡기지 말고, 방금 읽은 글의 '진짜 원인과 결과 구조'를 내 손으로 직접 압축 정리해 보세요.</p>
-                    <textarea class="summary-input" placeholder="이 글에서 말하는 표면적 지표와 이면의 모순 구조를 직접 타이핑해 보세요..."></textarea>
-                    <button class="action-btn" style="background:var(--success); font-size:0.88rem; padding:10px; margin-top:10px;" onclick="alert('✔ 정독 및 주도적 문장 재구성 훈련이 성공적으로 기록되었습니다. 뇌의 독해 유연성이 향상되고 있습니다.')">오늘의 정독 완수 인증</button>
+                    <textarea class="summary-input" id="userSummaryInput" placeholder="이 글에서 말하는 표면적 지표와 이면의 모순 구조를 직접 타이핑해 보세요..."></textarea>
+                    <button class="action-btn" style="background:var(--success); font-size:0.88rem; padding:10px; margin-top:10px;" onclick="savePracticeLog()">오늘의 정독 완수 인증</button>
                 </div>
+            </div>
+        </div>
+
+        <!-- 🕒 4단계: 실습 내역 누적 확인 공간 -->
+        <div class="card archive-zone">
+            <div class="section-title"><span>🕒</span> MY ROUTINE : 내가 작성한 실습 기록 역사</div>
+            <p style="color:var(--text-sub); margin-top:-15px; margin-bottom:20px; font-size:0.9rem;">
+                지금까지 날짜별로 정독하고 주도적으로 재구성한 문장들이 누적되어 저장되는 공간입니다.
+            </p>
+            <div class="archive-list" id="archiveContainer">
+                <!-- 기록이 여기에 자바스크립트로 쌓입니다 -->
             </div>
         </div>
     </div>
@@ -243,6 +263,7 @@
     // 📅 진짜 신문 기사/칼럼 전문 데이터베이스 (1,000자 내외 고용량)
     const library = {
         economy: {
+            subject: "경제 전문: 유동성의 역설",
             title: "[시론] 기준 금리 인하라는 마법, 왜 시장의 사각지대를 키우는가",
             body: `<p>최근 금융통화위원회는 침체 국면에 직면한 내수 경기를 부양하고 시장의 자금 경색을 해소하기 위해 <span class="highlight">기준 금리를 연 0.25%포인트 전격 인하</span>하는 통화정책을 단행했다. 거시경제학의 전통적인 파급 경로론에 따르면, 중앙은행의 금리 인하는 시중 은행의 대출 금리 하락을 유도하고 이는 기업의 자본 조달 비용을 경감시킴으로써 대대적인 설비 투자를 촉진해야 한다. 투자의 증대는 자연스럽게 고용 창출로 이어지고 가계의 실질 가용 소득을 증대시켜 최종적으로 내수 소비 가속화라는 거시경제적 선순환을 완성하는 것이 통상적인 정책 기대 수명이다.</p>
                    <p>그러나 최근 발행된 종합 산업 및 기술 금융 기사 1,000여 건의 텍스트 원문을 데이터 분석 기법으로 정밀 교차 검증한 결과, 유동성 완화정책으로 풀려난 자본은 실질 노동 시장의 파이를 키우는 데 기여하지 못하고 있음이 명백히 드러났다. 시장에서 유동성을 신속하게 흡수한 자본력 상위의 빅테크 기업들과 정보통신 독점 대기업들은 신규 고용이나 인간 인프라 확충에 예산을 쓰지 않았다. 대신 그들은 <span class="highlight">인공지능(AI) 기반 공정 자율화 엔진</span> 및 무인 에이전트 소프트웨어 시스템의 대대적인 선제 구축에 자본의 75% 이상을 쏟아부었다. 기술 혁신을 통해 자사 경영의 생산 효율성과 영업 이익률은 역대 최고치를 경신했으나, 인간 노동력이 개입할 여지는 도리어 대폭 축소되는 모순을 낳았다.</p>
@@ -253,6 +274,7 @@
             ]
         },
         humanity: {
+            subject: "인문학 칼럼: 생각의 아웃소싱",
             title: "[인문 칼럼] 요약본의 안락함이 우리에게 선물한 '생각의 아웃소싱'",
             body: `<p>현대 디지털 문명은 인간에게 극도의 효율성과 편리함을 선사한 듯하지만, 인지과학과 인문학의 시선으로 바라본 인류의 정신세계는 그 어느 때보다 빈곤한 쇠퇴기를 겪고 있다. 스마트폰 화면을 켜면 포털 메인부터 기업 협업 툴에 이르기까지 클릭 한 번으로 수만 자의 보고서나 깊이 있는 칼럼을 단 5초 만에 세 줄의 핵심 문장으로 압축해 주는 인공지능 요약 엔진이 도처에 편재해 있다. 시간의 빈곤에 시달리는 현대인들에게 이 기술은 정보 탐색의 고단함을 덜어준 축복처럼 보이지만, 우리는 정보 수집의 속도를 얻은 대가로 <span class="highlight">스스로 사유하고 비판하는 지적 독립권</span>을 통째로 잃어가고 있다.</p>
                    <p>텍스트를 직접 정독하는 행위는 뇌의 인지 구조 관점에서 볼 때 단순히 기호화된 단어를 시각적으로 수용하는 기계적 복사 과정이 아니다. 가독성이 떨어지거나 낯선 논리 구조를 가진 장문의 문장을 만났을 때, 인간의 뇌는 행간의 공백을 채우기 위해 스스로 가설을 세우고, 저자의 주저함이나 논리적 비약을 비판적으로 검증하며, 자신의 삶과 지식 체계 안으로 끌어들여 재해석하는 고밀도의 능동적 정신 작용을 펼친다. 니콜라스 카가 경고했듯, 타인이 정제해 준 핵심 요약본만을 무비판적으로 수용하게 되면 뇌는 전두엽의 깊은 추론 과정을 생략해 버리고 <span class="highlight">독해 근육이 퇴화하는 심각한 인지 무기력</span> 상태에 빠져들게 된다.</p>
@@ -265,6 +287,12 @@
     };
 
     let selectedMode = '';
+    let currentGenre = 'economy'; // 현재 선택된 아티클 장르 추적용
+
+    // 페이지 로드시 기존 실습 로그 뿌려주기
+    document.addEventListener('DOMContentLoaded', () => {
+        renderArchive();
+    });
 
     // 🧪 2단계 대조 실험 로직 엔진
     function openQuiz(mode) {
@@ -346,10 +374,9 @@
 
     // 📅 3단계 학습 콘텐츠 로더
     function loadArticle(genre) {
+        currentGenre = genre; // 현재 기사 종류 업데이트
         document.querySelectorAll('.tab-trigger').forEach(btn => btn.classList.remove('active'));
-        if(event && event.target && event.target.classList) {
-            event.target.classList.add('active');
-        }
+        document.getElementById(`tab-${genre}`).classList.add('active');
 
         const data = library[genre];
         document.getElementById('artTitle').innerText = data.title;
@@ -365,6 +392,86 @@
                 </div>
             `;
         });
+    }
+
+    // 💾 실습 요약본 저장 함수
+    function savePracticeLog() {
+        const textInput = document.getElementById('userSummaryInput').value.trim();
+        
+        if (!textInput) {
+            alert('요약 내용을 입력한 뒤 인증 버튼을 눌러주세요!');
+            return;
+        }
+
+        // 현재 날짜 및 시간 생성
+        const now = new Date();
+        const dateString = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+        
+        // 새로운 로그 객체
+        const newLog = {
+            id: Date.now().toString(),
+            date: dateString,
+            articleName: library[currentGenre].subject,
+            content: textInput
+        };
+
+        // 로컬스토리지에서 기존 목록 가져오기
+        let currentLogs = JSON.parse(localStorage.getItem('readmic_logs')) || [];
+        currentLogs.unshift(newLog); // 최신 글이 맨 위로 오도록 배열 앞에 추가
+        
+        // 로컬스토리지 저장 및 화면 갱신
+        localStorage.setItem('readmic_logs', JSON.stringify(currentLogs));
+        
+        // 입력 칸 비우기 및 안내
+        document.getElementById('userSummaryInput').value = '';
+        renderArchive();
+        
+        alert('✔ 정독 및 주도적 문장 재구성 훈련이 성공적으로 기록되었습니다. 아래 역사 내역에서 확인하실 수 있습니다.');
+    }
+
+    // 🕒 누적 아카이브 화면 출력 함수
+    function renderArchive() {
+        const archiveContainer = document.getElementById('archiveContainer');
+        const currentLogs = JSON.parse(localStorage.getItem('readmic_logs')) || [];
+
+        if (currentLogs.length === 0) {
+            archiveContainer.innerHTML = `<p style="text-align:center; color:var(--text-sub); font-size:0.9rem; padding: 20px 0;">아직 작성된 실습 기록이 없습니다. 오늘 첫 정독 요약을 완성해 보세요!</p>`;
+            return;
+        }
+
+        archiveContainer.innerHTML = '';
+        currentLogs.forEach(log => {
+            archiveContainer.innerHTML += `
+                <div class="archive-item">
+                    <div class="archive-meta">
+                        <span class="archive-tag">📖 ${log.articleName}</span>
+                        <span>📅 실습일시: ${log.date}</span>
+                    </div>
+                    <div class="archive-text">${escapeHtml(log.content)}</div>
+                    <button class="btn-delete-log" onclick="deleteArchiveLog('${log.id}')">삭제</button>
+                </div>
+            `;
+        });
+    }
+
+    // 기록 삭제 함수
+    function deleteArchiveLog(id) {
+        if (confirm('이 실습 기록을 내역에서 삭제하시겠습니까?')) {
+            let currentLogs = JSON.parse(localStorage.getItem('readmic_logs')) || [];
+            currentLogs = currentLogs.filter(log => log.id !== id);
+            localStorage.setItem('readmic_logs', JSON.stringify(currentLogs));
+            renderArchive();
+        }
+    }
+
+    // XSS 방지를 위한 안전 텍스트 치환 함수
+    function escapeHtml(text) {
+        return text
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
     }
 </script>
 </body>
